@@ -8,6 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/goyesql"
+	_ "github.com/lib/pq"
 )
 
 const (

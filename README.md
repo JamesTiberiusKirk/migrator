@@ -20,7 +20,7 @@ sql/
 
 ## CLI 
 ```sh
-go install github.com/JamesTiberiusKirk/migrator@latest
+go install github.com/JamesTiberiusKirk/migrator/cmd/migrator@latest
 migrator schema-up
 migrator schema-down
 migrator schema-reload
