@@ -34,33 +34,36 @@ func main() {
 
 	if len(osArgs) <= 0 {
 		fmt.Println("need to provide one of the following")
-		fmt.Println("[count-migrations|schema-up|schema-down|migrate|run <script_name>]")
+		fmt.Println("[version|count-migrations|schema-up|schema-down|migrate|run <script_name>]")
 		return
 	}
 
 	url := os.Getenv("DB_URL")
-
-	m := migrator.NewMigratorWithPostgresURL(url, "./sql/")
 
 	switch osArgs[0] {
 	case "version":
 		fmt.Printf("Version: %s\n", migrator.Version)
 	case "count-migrations":
 		fmt.Println("Available migrations")
+		m := migrator.NewMigratorWithPostgresURL(url, "./sql/")
 		fmt.Println(m.CountMigrations())
 	case "schema-up":
 		fmt.Printf("Applying schema up to db: %s\n", url)
+		m := migrator.NewMigratorWithPostgresURL(url, "./sql/")
 		m.ApplySchemaUp()
 	case "schema-down":
 		fmt.Printf("Applying schema down to db: %s\n", url)
+		m := migrator.NewMigratorWithPostgresURL(url, "./sql/")
 		m.ApplySchemaDown()
 	case "schema-reload":
 		fmt.Printf("Applying schema down to db: %s\n", url)
+		m := migrator.NewMigratorWithPostgresURL(url, "./sql/")
 		m.ApplySchemaDown()
 		fmt.Printf("Applying schema up to db: %s\n", url)
 		m.ApplySchemaUp()
 	case "migrate":
 		fmt.Printf("Applying migration to db: %s\n", url)
+		m := migrator.NewMigratorWithPostgresURL(url, "./sql/")
 		m.ApplyMigration()
 	case "run":
 		if len(osArgs) <= 1 {
@@ -68,11 +71,12 @@ func main() {
 			return
 		}
 
+		m := migrator.NewMigratorWithPostgresURL(url, "./sql/")
 		fmt.Printf("Running SQL script on db: %s\n", url)
 		m.RunSQLScript(osArgs[1], nil)
 	default:
 		fmt.Println("Please provide one of the following")
 		fmt.Println("[count-migrations|schema-up|schema-down|migrate|run <script_name>]")
 	}
-	fmt.Print("------------------------------------------------------------")
+	fmt.Println("------------------------------------------------------------")
 }
