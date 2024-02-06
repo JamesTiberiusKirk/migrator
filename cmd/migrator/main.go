@@ -43,6 +43,8 @@ func main() {
 	m := migrator.NewMigratorWithPostgresURL(url, "./sql/")
 
 	switch osArgs[0] {
+	case "version":
+		fmt.Printf("Version: %s\n", migrator.Version)
 	case "count-migrations":
 		fmt.Println("Available migrations")
 		fmt.Println(m.CountMigrations())
