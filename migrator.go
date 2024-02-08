@@ -2,6 +2,7 @@ package migrator
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"strconv"
 	"strings"
@@ -142,7 +143,7 @@ func (m *Migrator) ApplyMigration() {
 		panic(err)
 	}
 
-	var toApply []int
+	sqlFiles := []fs.DirEntry{}
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -150,11 +151,26 @@ func (m *Migrator) ApplyMigration() {
 		}
 
 		split := strings.Split(file.Name(), ".")
-		if len(split) == 2 {
+		if len(split) <= 2 {
 			continue
 		}
 
 		if split[1] != "sql" {
+			continue
+		}
+		sqlFiles = append(sqlFiles, file)
+	}
+
+	if len(sqlFiles) == 0 {
+		fmt.Println("No migrations")
+		return
+	}
+
+	var toApply []int
+
+	for _, sqlFile := range sqlFiles {
+		split := strings.Split(sqlFile.Name(), ".")
+		if len(split) == 2 {
 			continue
 		}
 
