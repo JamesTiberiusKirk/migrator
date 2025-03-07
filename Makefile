@@ -5,4 +5,4 @@ install:
 	go install ./cmd/migrator
 
 ver:
-	./get_version.sh
+	go generate
