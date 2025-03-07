@@ -67,6 +67,22 @@ func NewMigratorWithSqlxClient(sx *sqlx.DB, sf string) *Migrator {
 	}
 }
 
+func (m *Migrator) IsInitialised() bool {
+	row := m.DBC.QueryRow(`
+		SELECT COUNT(tablename)
+		FROM pg_tables
+		WHERE tablename = 'migrations';`)
+
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		fmt.Printf("[MIGRATOR]: failed to scan result with error: %s\n", err.Error())
+		panic(fmt.Errorf("failed to scan result with error: %w", err))
+	}
+
+	return count == 1
+}
+
 // CountMigrations - counts migrations in the migrations folder.
 // Panics on error.
 func (m *Migrator) CountMigrations() int {

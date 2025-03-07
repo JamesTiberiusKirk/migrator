@@ -72,7 +72,7 @@ func main() {
 	case "check":
 		url := getPGUrl()
 
-		db, err := sql.Open("postgres", obfuscatePassword(url))
+		db, err := sql.Open("postgres", url)
 		if err != nil {
 			fmt.Printf("Failed to connect to the database: %s", err.Error())
 			return
@@ -86,6 +86,11 @@ func main() {
 		fmt.Println("Database connection successful")
 		fmt.Printf("Version: %s\n", migrator.Version)
 		fmt.Printf("SQL Path: %s\n", sqlFolderPath)
+
+		m := migrator.NewMigratorWithSqlClient(db, sqlFolderPath)
+		init := m.IsInitialised()
+		fmt.Printf("Migrator initialised: %t\n", init)
+
 	case "count-migrations":
 		fmt.Println("Available migrations")
 		url := getPGUrl()
