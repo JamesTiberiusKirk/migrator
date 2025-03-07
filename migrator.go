@@ -1,6 +1,7 @@
 package migrator
 
 import (
+	"database/sql"
 	"fmt"
 	"io/fs"
 	"os"
@@ -34,10 +35,26 @@ func NewMigratorWithPostgresURL(dbURL string, sf string) *Migrator {
 	return NewMigratorWithSqlxClient(db, sf)
 }
 
+// NewMigratorWithSqlClient - initialises migrator with an sql client.
+func NewMigratorWithSqlClient(s *sql.DB, sf string) *Migrator {
+	if !checkFolders(sf) {
+		fmt.Println("[MIGRATOR]: Folders and files are not organised acording to the documentation")
+		return nil
+	}
+
+	schema := goyesql.MustParseFile(sf + schemaFileName)
+
+	return &Migrator{
+		SQLFolder: sf,
+		DBC:       sqlx.NewDb(s, "postgres"),
+		sql:       schema,
+	}
+}
+
 // NewMigratorWithSqlxClient - initialises migrator with an sqlx client.
 func NewMigratorWithSqlxClient(sx *sqlx.DB, sf string) *Migrator {
 	if !checkFolders(sf) {
-		fmt.Println("Folders and files are not organised acording to the documentation")
+		fmt.Println("[MIGRATOR]: Folders and files are not organised acording to the documentation")
 		return nil
 	}
 
@@ -55,7 +72,7 @@ func NewMigratorWithSqlxClient(sx *sqlx.DB, sf string) *Migrator {
 func (m *Migrator) CountMigrations() int {
 	files, err := listFilesFilter(m.SQLFolder+migrationsFolderName, "*.sql")
 	if err != nil {
-		fmt.Printf("Error opening migrations directory: %s\n", err.Error())
+		fmt.Printf("[MIGRATOR]: Error opening migrations directory: %s\n", err.Error())
 		panic(err)
 	}
 
@@ -113,10 +130,10 @@ func (m *Migrator) ApplySchemaDown() {
 	err := tx.Commit()
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			fmt.Printf("Rollback error: %s\n", err.Error())
+			fmt.Printf("[MIGRATOR]: Rollback error: %s\n", err.Error())
 			panic(fmt.Errorf("rollback error: %w", err))
 		}
-		fmt.Printf("Commit error: %s\n", err.Error())
+		fmt.Printf("[MIGRATOR]: Commit error: %s\n", err.Error())
 		panic(err)
 	}
 }
@@ -131,15 +148,15 @@ func (m *Migrator) ApplyMigration() {
 	var r row
 	err := m.DBC.QueryRowx("SELECT * FROM migrations WHERE id = 1").StructScan(&r)
 	if err != nil {
-		fmt.Printf("Error quering migrations table: %s\n", err.Error())
+		fmt.Printf("[MIGRATOR]: Error quering migrations table: %s\n", err.Error())
 		panic(err)
 	}
 
-	fmt.Printf("Curent migration level: %d\n", r.Version)
+	fmt.Printf("[MIGRATOR]: Curent migration level: %d\n", r.Version)
 
 	files, err := os.ReadDir(m.SQLFolder + "/migrations")
 	if err != nil {
-		fmt.Printf("Error opening migrations directory: %s\n", err.Error())
+		fmt.Printf("[MIGRATOR]: Error opening migrations directory: %s\n", err.Error())
 		panic(err)
 	}
 
@@ -162,7 +179,7 @@ func (m *Migrator) ApplyMigration() {
 	}
 
 	if len(sqlFiles) == 0 {
-		fmt.Println("No migrations")
+		fmt.Println("[MIGRATOR]: No migrations")
 		return
 	}
 
@@ -176,7 +193,7 @@ func (m *Migrator) ApplyMigration() {
 
 		level, err := strconv.Atoi(split[0])
 		if err != nil {
-			fmt.Printf("Could not parse migrations: %s\n", err.Error())
+			fmt.Printf("[MIGRATOR]: Could not parse migrations: %s\n", err.Error())
 			panic(err)
 		}
 
@@ -186,7 +203,7 @@ func (m *Migrator) ApplyMigration() {
 	}
 
 	if len(toApply) == 0 {
-		fmt.Println("No new migrations")
+		fmt.Println("[MIGRATOR]: No new migrations")
 		return
 	}
 
@@ -197,19 +214,19 @@ func (m *Migrator) ApplyMigration() {
 	for _, l := range toApply {
 		migration, err := os.ReadFile(fmt.Sprintf("%s%s%d.sql", m.SQLFolder, migrationsFolderName, l))
 		if err != nil {
-			fmt.Printf("Could not read migration file %d: %s\n", l, err.Error())
+			fmt.Printf("[MIGRATOR]: Could not read migration file %d: %s\n", l, err.Error())
 			panic(err)
 		}
 
 		tx, err := m.DBC.DB.Begin()
 		if err != nil {
-			fmt.Printf("Error begining transaction: %s\n", err.Error())
+			fmt.Printf("[MIGRATOR]: Error begining transaction: %s\n", err.Error())
 			panic(err)
 		}
 
 		_, err = tx.Exec(string(migration))
 		if err != nil {
-			fmt.Printf("Error executing migration itself: %s\n", err.Error())
+			fmt.Printf("[MIGRATOR]: Error executing migration itself: %s\n", err.Error())
 			panic(err)
 		}
 
@@ -220,13 +237,13 @@ func (m *Migrator) ApplyMigration() {
 			DO UPDATE SET version = EXCLUDED.version;
 		`, l))
 		if err != nil {
-			fmt.Printf("Error executing version upgrate in db transaction: %s\n", err.Error())
+			fmt.Printf("[MIGRATOR]: Error executing version upgrate in db transaction: %s\n", err.Error())
 			panic(err)
 		}
 
 		err = tx.Commit()
 		if err != nil {
-			fmt.Println("failed to commit transaction")
+			fmt.Println("[MIGRATOR]: failed to commit transaction")
 			panic(err)
 		}
 
@@ -238,13 +255,21 @@ func (m *Migrator) ApplyMigration() {
 func (m *Migrator) RunSQLScript(name string, args any) {
 	sq, ok := m.sql[name]
 	if !ok {
-		fmt.Printf("SQL script '%s' not found", name)
+		fmt.Printf("[MIGRATOR]: SQL script '%s' not found", name)
 		panic(fmt.Errorf("schemanot not found"))
 	}
 
-	_, err := m.DBC.Exec(sq.Query, args)
-	if err != nil {
-		fmt.Printf("exec failed on script %s with error: %s\n", name, err.Error())
-		panic(fmt.Errorf("exec failed on script %s with error: %w", name, err))
+	if args == nil {
+		_, err := m.DBC.Exec(sq.Query)
+		if err != nil {
+			fmt.Printf("[MIGRATOR]: exec failed on script %s with error: %s\n", name, err.Error())
+			panic(fmt.Errorf("exec failed on script %s with error: %w", name, err))
+		}
+	} else {
+		_, err := m.DBC.Exec(sq.Query, args)
+		if err != nil {
+			fmt.Printf("[MIGRATOR]: exec failed on script %s with error: %s\n", name, err.Error())
+			panic(fmt.Errorf("exec failed on script %s with error: %w", name, err))
+		}
 	}
 }

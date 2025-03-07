@@ -29,6 +29,26 @@ migrator count-migrations
 migrator run "sql_script_name"
 ```
 
+The cli needs some env variables also. Either the full db url string:
+```
+DB_URL
+```
+
+Or the following so it can build its own postgres url string
+
+```
+DB_NAME=databaseName
+DB_USER=user
+DB_PASS=password
+DB_HOST=localhost:5432
+DB_DISABLE_SSL=true
+```
+
+Also a var for the sql path if you want it to be different from the default of `./sql/`
+```
+MIGRATOR_SQL_FOLDER_PATH=./whatever/path/you/want
+```
+
 ## PACKAGE
 ```sh
 go get github.com/JamesTiberiusKirk/migrator@latest
