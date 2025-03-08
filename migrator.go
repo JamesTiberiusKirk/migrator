@@ -67,6 +67,8 @@ func NewMigratorWithSqlxClient(sx *sqlx.DB, sf string) *Migrator {
 	}
 }
 
+// IsInitialised checks if the migrator is initialised in the datase.
+// Can me used for checking if the schema has been applied.
 func (m *Migrator) IsInitialised() bool {
 	row := m.DBC.QueryRow(`
 		SELECT COUNT(tablename)
@@ -99,6 +101,11 @@ func (m *Migrator) CountMigrations() int {
 // The migrations table is initialised with the current amount of migrations in the migrations folder and assumes the schema is up to date.
 // Panics on error.
 func (m *Migrator) ApplySchemaUp() {
+	if m.IsInitialised() {
+		fmt.Println("[MIGRATOR]: Schema is already initialised")
+		return
+	}
+
 	sq, ok := m.sql["schema_up"]
 	if !ok {
 		panic(fmt.Errorf("schemanot not found"))
