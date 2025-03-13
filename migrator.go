@@ -177,7 +177,7 @@ func (m *Migrator) ApplyMigration() {
 
 	fmt.Printf("[MIGRATOR]: Curent migration level: %d\n", r.Version)
 
-	files, err := os.ReadDir(m.SQLFolder + "/migrations")
+	files, err := os.ReadDir(m.SQLFolder + migrationsFolderName)
 	if err != nil {
 		fmt.Printf("[MIGRATOR]: Error opening migrations directory: %s\n", err.Error())
 		panic(err)
@@ -190,14 +190,10 @@ func (m *Migrator) ApplyMigration() {
 			continue
 		}
 
-		split := strings.Split(file.Name(), ".")
-		if len(split) <= 2 {
+		if !strings.HasSuffix(file.Name(), ".sql") {
 			continue
 		}
 
-		if split[1] != "sql" {
-			continue
-		}
 		sqlFiles = append(sqlFiles, file)
 	}
 
@@ -210,7 +206,7 @@ func (m *Migrator) ApplyMigration() {
 
 	for _, sqlFile := range sqlFiles {
 		split := strings.Split(sqlFile.Name(), ".")
-		if len(split) == 2 {
+		if len(split) != 2 {
 			continue
 		}
 
