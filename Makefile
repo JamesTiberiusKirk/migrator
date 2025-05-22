@@ -3,6 +3,3 @@ build:
 
 install: 
 	go install -ldflags='-s -w -X "github.com/JamesTiberiusKirk/migrator.Version=development"' ./cmd/migrator
-
-ver:
-	go generate
