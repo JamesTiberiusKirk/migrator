@@ -1,5 +1,4 @@
-# MIGRATOR
-Database Migration Utility  
+# MIGRATOR Database Migration Utility  
 Works both as a package to be used at the start of your application or as a cli tool to be manually ran.
 For the moment this is made only for Postgres
 
@@ -57,4 +56,4 @@ View `cmd/migrator/main.go` for examples.
 
 
 ## Future works
-- Support for go:embed
+- Support multiple databases/make it modular so database support can be injected
