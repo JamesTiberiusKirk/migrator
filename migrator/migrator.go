@@ -86,7 +86,7 @@ func (m *Migrator) ApplySchemaUp() error {
 		return err
 	}
 	if initialised {
-		return fmt.Errorf("schema is already initialised")
+		return ErrSchemaAlreadyInitialised
 	}
 
 	sq, ok := m.sql["schema_up"]
