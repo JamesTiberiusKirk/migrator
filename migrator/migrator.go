@@ -37,7 +37,7 @@ func NewMigratorWithPostgresURL(dbURL string, sf string) (*Migrator, error) {
 
 func NewMigratorWithSqlClient(s *sql.DB, sf string) (*Migrator, error) {
 	schemaFileName := "schema.sql"
-	migrationsFolderName := "migrations"
+	migrationsFolderName := "migrations/"
 
 	if !checkFolders(sf, schemaFileName, migrationsFolderName) {
 		return nil, fmt.Errorf("folders and files are not organised according to the documentation")
